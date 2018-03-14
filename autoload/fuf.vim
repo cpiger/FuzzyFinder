@@ -151,13 +151,11 @@ endfunction
 
 "
 function fuf#openFile(path, mode, reuse)
-    " echomsg "path".a:path.a:mode
-    if match(a:path, "\\\\")
-        let fname = fnamemodify(fnamemodify(a:path, ':t'), ':p')   
-    else
+    if -1 == match(a:path, '\\\\')
         let fname = a:path
+    else
+        let fname = substitute(a:path, '\\\\','\\', 'g')
     endif
-    " echomsg "fname".fname
   let bufNr = bufnr('^' . fname . '$')
   if bufNr > -1
     call fuf#openBuffer(bufNr, a:mode, a:reuse)
