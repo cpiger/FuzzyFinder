@@ -152,6 +152,13 @@ endfunction
 
 "
 function s:handler.onModeLeavePost(opened)
+    " for old exvim
+    " if exists('g:exES_Tag')
+        " let &tags = escape(g:exES_Tag, " ")
+    " else
+        " set tags=./tags
+    " endif
+    " for old exvim end
 endfunction
 
 " }}}1

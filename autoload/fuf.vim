@@ -151,7 +151,8 @@ endfunction
 
 "
 function fuf#openFile(path, mode, reuse)
-  let bufNr = bufnr('^' . a:path . '$')
+    let fname = fnamemodify(fnamemodify(a:path, ':t'), ':p')   
+  let bufNr = bufnr('^' . fname . '$')
   if bufNr > -1
     call fuf#openBuffer(bufNr, a:mode, a:reuse)
   else
@@ -160,7 +161,7 @@ function fuf#openFile(path, mode, reuse)
           \   s:OPEN_TYPE_SPLIT   : 'split '  ,
           \   s:OPEN_TYPE_VSPLIT  : 'vsplit ' ,
           \   s:OPEN_TYPE_TAB     : 'tabedit ',
-          \ }[a:mode] . fnameescape(fnamemodify(a:path, ':~:.'))
+          \ }[a:mode] . fnameescape(fnamemodify(fname, ':~:.'))
   endif
 endfunction
 
@@ -654,7 +655,8 @@ endfunction
 "
 function s:highlightError()
   syntax clear
-  syntax match Error  /^.*$/
+  " syntax match Error  /^.*$/
+  syntax match Question  /^.*$/
 endfunction
 
 "
@@ -710,7 +712,7 @@ function s:activateFufBuffer()
   "         if 'autochdir' was set on.
   lcd .
   let cwd = getcwd()
-  call l9#tempbuffer#openScratch(s:FUF_BUF_NAME, 'fuf', [], 1, 0, 1, {})
+  call l9#tempbuffer#openScratch(s:FUF_BUF_NAME, 'fuf', [], 0, 0, 1, {})
   resize 1 " for issue #21 
   " lcd ... : countermeasure against auto-cd script
   lcd `=cwd`
