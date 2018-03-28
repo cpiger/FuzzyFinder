@@ -154,5 +154,39 @@ endfunction
 call s:initialize()
 
 " }}}1
+
+if !exists('g:fuf_locate_path')
+    let g:fuf_locate_path='locate'
+endif
+if !exists('g:fuf_everything_path')
+    let g:fuf_everything_path='es.exe'
+endif
+if !exists('g:fuf_ag_path')
+    let g:fuf_ag_path='ag.exe'
+endif
+
+function! FufAg(...)
+    let result = system(g:fuf_ag_path." --nogroup --column --nocolor ".a:1)
+    let result = substitute(result, '\r','', 'g')
+    let resultlist = split(result,"\n")
+    call fuf#givenfile#launch('',0,'>Ag>',resultlist)
+endfunction
+command! -nargs=+ FufAg call FufAg(<f-args>)
+noremap <leader>ag :FufAg  <C-r>=expand('<cword>')<CR><CR>
+
+function! FufLocate(...)
+    if has('win32') || has('win64')
+        let result = system(g:fuf_everything_path." ".a:1)
+    else
+        let result = system(g:fuf_locate_path." -i -b ".a:1)
+    endif
+    let resultlist = split(result,"\n")
+    if a:0 == 2
+        call filter(resultlist, 'v:val =~ "^'.a:2.'"')
+    endif
+    call fuf#givenfile#launch('',0,'>Everything>',resultlist)
+endfunction
+command! -nargs=+ FufLocate call FufLocate(<f-args>)
+
 "=============================================================================
 " vim: set fdm=marker:

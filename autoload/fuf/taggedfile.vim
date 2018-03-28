@@ -132,7 +132,7 @@ endfunction
 
 "
 function s:handler.onOpen(word, mode)
-  call fuf#openFile(a:word, a:mode, g:fuf_reuseWindow)
+  call fuf#openFile(a:word, -1, a:mode, g:fuf_reuseWindow)
 endfunction
 
 "

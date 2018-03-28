@@ -190,7 +190,7 @@ function s:handler.onOpen(word, mode)
     let self.reservedMode = self.getModeName()
     return
   else
-    call fuf#openFile(a:word, a:mode, g:fuf_reuseWindow)
+    call fuf#openFile(a:word, -1, a:mode, g:fuf_reuseWindow)
   endif
 endfunction
 

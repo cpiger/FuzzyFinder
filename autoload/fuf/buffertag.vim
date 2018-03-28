@@ -213,7 +213,7 @@ endfunction
 
 "
 function s:jumpToTag(item, mode)
-  call fuf#openFile(a:item.fname, a:mode, g:fuf_reuseWindow)
+  call fuf#openFile(a:item.fname, -1, a:mode, g:fuf_reuseWindow)
   call cursor(a:item.lnum, 1)
   normal! zvzz
 endfunction

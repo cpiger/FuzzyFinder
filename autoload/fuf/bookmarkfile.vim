@@ -53,7 +53,7 @@ let s:OPEN_TYPE_DELETE = -1
 " opens a:path and jumps to the line matching to a:pattern from a:lnum within
 " a:range. if not found, jumps to a:lnum.
 function s:jumpToBookmark(path, mode, pattern, lnum)
-  call fuf#openFile(a:path, a:mode, g:fuf_reuseWindow)
+  call fuf#openFile(a:path, -1, a:mode, g:fuf_reuseWindow)
   call cursor(s:getMatchingLineNumber(getline(1, '$'), a:pattern, a:lnum), 0)
   normal! zvzz
 endfunction

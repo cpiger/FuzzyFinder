@@ -150,18 +150,31 @@ function fuf#openBuffer(bufNr, mode, reuse)
 endfunction
 
 "
-function fuf#openFile(path, mode, reuse)
-    let fname = fnamemodify(fnamemodify(a:path, ":t"), ":p")
+function fuf#openFile(path, lnum, mode, reuse)
+    if -1 == match(a:path, '\\\\')
+        let fname = a:path
+    else
+        let fname = substitute(a:path, '\\\\','\\', 'g')
+    endif
   let bufNr = bufnr('^' . fname . '$')
   if bufNr > -1
     call fuf#openBuffer(bufNr, a:mode, a:reuse)
   else
-    execute {
-          \   s:OPEN_TYPE_CURRENT : 'edit '   ,
-          \   s:OPEN_TYPE_SPLIT   : 'split '  ,
-          \   s:OPEN_TYPE_VSPLIT  : 'vsplit ' ,
-          \   s:OPEN_TYPE_TAB     : 'tabedit ',
-          \ }[a:mode] . fnameescape(fnamemodify(fname, ':~:.'))
+      if -1 == a:lnum
+          execute {
+                      \   s:OPEN_TYPE_CURRENT : 'edit '   ,
+                      \   s:OPEN_TYPE_SPLIT   : 'split '  ,
+                      \   s:OPEN_TYPE_VSPLIT  : 'vsplit ' ,
+                      \   s:OPEN_TYPE_TAB     : 'tabedit ',
+                      \ }[a:mode] . fnameescape(fnamemodify(fname, ':~:.'))
+      else
+          execute {
+                      \   s:OPEN_TYPE_CURRENT : 'edit '   ,
+                      \   s:OPEN_TYPE_SPLIT   : 'split '  ,
+                      \   s:OPEN_TYPE_VSPLIT  : 'vsplit ' ,
+                      \   s:OPEN_TYPE_TAB     : 'tabedit ',
+                      \ }[a:mode] ."+".a:lnum." ". fnameescape(fnamemodify(fname, ':~:.'))
+      endif
   endif
 endfunction
 

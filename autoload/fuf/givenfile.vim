@@ -100,7 +100,15 @@ endfunction
 
 "
 function s:handler.onOpen(word, mode)
-  call fuf#openFile(a:word, a:mode, g:fuf_reuseWindow)
+    if '>Ag>' == self.getPrompt()
+        let colon1 = stridx(a:word, ":")
+        let colon2 = stridx(a:word, ":", colon1 + 1)
+        let fname  = strpart(a:word, 0, colon1)
+        let lnum   = strpart(a:word, colon1+1, colon2-colon1)
+        call fuf#openFile(fname, lnum, a:mode, g:fuf_reuseWindow)
+    else
+        call fuf#openFile(a:word, -1, a:mode, g:fuf_reuseWindow)
+    endif
 endfunction
 
 
