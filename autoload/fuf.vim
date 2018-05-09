@@ -28,7 +28,21 @@ endfunction
 
 "
 function fuf#getCurrentTagFiles()
-  return sort(filter(map(tagfiles(), 'fnamemodify(v:val, '':p'')'), 'filereadable(v:val)'))
+    if exists('g:ex_filenametags')
+      let _tags = &tags
+      try
+          let &tags = g:ex_filenametags
+          " echomsg &tags
+      catch
+          echohl ErrorMsg | echo "Exception: " . v:exception | echohl NONE
+        return ''
+      finally
+          let lookfiles = sort(filter(map(tagfiles(), 'fnamemodify(v:val, '':p'')'), 'filereadable(v:val)'))
+          let &tags = _tags
+          return lookfiles
+      endtry
+    endif
+    " return sort(filter(map(tagfiles(), 'fnamemodify(v:val, '':p'')'), 'filereadable(v:val)'))
 endfunction
 
 "
@@ -151,11 +165,12 @@ endfunction
 
 "
 function fuf#openFile(path, lnum, mode, reuse)
-    if -1 == match(a:path, '\\\\')
+    " u-ctags ms-windows filename path \\ in tags
+    " if -1 == match(a:path, '\\\\')
         let fname = a:path
-    else
-        let fname = substitute(a:path, '\\\\','\\', 'g')
-    endif
+    " else
+        " let fname = substitute(a:path, '\\\\','\\', 'g')
+    " endif
   let bufNr = bufnr('^' . fname . '$')
   if bufNr > -1
     call fuf#openBuffer(bufNr, a:mode, a:reuse)
@@ -717,7 +732,8 @@ function s:setAbbrWithFileAbbrData(item, snippedHeads)
 endfunction
 
 "
-let s:FUF_BUF_NAME = '[fuf]'
+" let s:FUF_BUF_NAME = '[fuf]'
+let s:FUF_BUF_NAME = '__FUF__'
 
 "
 function s:activateFufBuffer()
@@ -748,6 +764,7 @@ function s:deactivateFufBuffer()
     AutoComplPopUnlock
   endif
   call l9#tempbuffer#close(s:FUF_BUF_NAME)
+  exe 'bwipe! ' .s:FUF_BUF_NAME
 endfunction
 
 " }}}1
@@ -913,7 +930,7 @@ function s:handlerBase.onCr(openType)
   endif
   if !self.isOpenable(getline('.'))
     " To clear i_<C-r> expression (fuf#getRunningHandler().onCr...)
-    echo ''
+    echomsg ''
     return
   endif
   let s:reservedCommand = [self.removePrompt(getline('.')), a:openType]

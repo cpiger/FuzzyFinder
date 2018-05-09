@@ -172,7 +172,6 @@ function! FufAg(...)
     call fuf#givenfile#launch('',0,'>Ag>',resultlist)
 endfunction
 command! -nargs=+ FufAg call FufAg(<f-args>)
-noremap <leader>ag :FufAg  <C-r>=expand('<cword>')<CR><CR>
 
 function! FufLocate(...)
     if has('win32') || has('win64')
