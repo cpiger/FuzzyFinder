@@ -747,7 +747,6 @@ function s:activateFufBuffer()
   lcd `=cwd`
   setlocal nocursorline   " for highlighting
   setlocal nocursorcolumn " for highlighting
-  setlocal buftype=
   setlocal omnifunc=fuf#onComplete
   redraw " for 'lazyredraw'
   if exists(':AcpLock')
