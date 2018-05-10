@@ -747,6 +747,7 @@ function s:activateFufBuffer()
   lcd `=cwd`
   setlocal nocursorline   " for highlighting
   setlocal nocursorcolumn " for highlighting
+  setlocal buftype=
   setlocal omnifunc=fuf#onComplete
   redraw " for 'lazyredraw'
   if exists(':AcpLock')
@@ -764,7 +765,6 @@ function s:deactivateFufBuffer()
     AutoComplPopUnlock
   endif
   call l9#tempbuffer#close(s:FUF_BUF_NAME)
-  exe 'bwipe! ' .s:FUF_BUF_NAME
 endfunction
 
 " }}}1
