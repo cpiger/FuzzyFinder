@@ -410,7 +410,9 @@ function fuf#launch(modeName, initialPattern, partialMatching)
   call s:activateFufBuffer()
   augroup FufLocal
     autocmd!
-    autocmd CursorMovedI <buffer>        call s:runningHandler.onCursorMovedI()
+    " autocmd CursorMovedI <buffer>        call s:runningHandler.onCursorMovedI() "cause __FUF__ buffer insert a completeion item sometimes
+    " autocmd InsertCharPre <buffer>        call s:runningHandler.onCursorMovedI()  "better than CursorMovedI
+    autocmd CursorHoldI <buffer>        call s:runningHandler.onCursorHoldI()  "better than directly autocmd InsertCharPre
     autocmd InsertLeave  <buffer> nested call s:runningHandler.onInsertLeave()
   augroup END
   for [key, func] in [
@@ -748,6 +750,7 @@ function s:activateFufBuffer()
   setlocal nocursorline   " for highlighting
   setlocal nocursorcolumn " for highlighting
   setlocal omnifunc=fuf#onComplete
+  setlocal complete=
   redraw " for 'lazyredraw'
   if exists(':AcpLock')
     AcpLock
@@ -895,6 +898,11 @@ function s:handlerBase.onCursorMovedI()
     let self.lastPattern = self.removePrompt(getline('.'))
     call feedkeys("\<C-x>\<C-o>", 'n')
   endif
+endfunction
+
+function s:handlerBase.onCursorHoldI()
+    call s:runningHandler.onCursorMovedI()
+    autocmd InsertCharPre <buffer>        call s:runningHandler.onCursorMovedI()  "better than CursorMovedI
 endfunction
 
 "
