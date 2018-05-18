@@ -105,6 +105,7 @@ function s:handler.onOpen(word, mode)
         let colon2 = stridx(a:word, ":", colon1 + 1)
         let fname  = strpart(a:word, 0, colon1)
         let lnum   = strpart(a:word, colon1+1, colon2-colon1)
+        " echomsg "fname:lnum".fname.lnum
         call fuf#openFile(fname, lnum, a:mode, g:fuf_reuseWindow)
     else
         call fuf#openFile(a:word, -1, a:mode, g:fuf_reuseWindow)

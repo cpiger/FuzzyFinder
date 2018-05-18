@@ -158,12 +158,24 @@ call s:initialize()
 if !exists('g:fuf_locate_path')
     let g:fuf_locate_path='locate'
 endif
+
 if !exists('g:fuf_everything_path')
     let g:fuf_everything_path='es.exe'
 endif
+
 if !exists('g:fuf_ag_path')
     let g:fuf_ag_path='ag.exe'
 endif
+
+if !exists('g:fuf_fzf_path')
+    let g:fuf_fzf_path='fzf.exe'
+endif
+
+if !exists('g:fuf_fd_path')
+    let g:fuf_fd_path='fd.exe'
+endif
+
+let g:fuf_coveragefile_external_cmd = 'fd -t f'
 
 function! FufAg(...)
     let result = system(g:fuf_ag_path." --nogroup --column --nocolor ".a:1)
@@ -172,6 +184,22 @@ function! FufAg(...)
     call fuf#givenfile#launch('',0,'>Ag>',resultlist)
 endfunction
 command! -nargs=+ FufAg call FufAg(<f-args>)
+
+function! FufFzf(...)
+    let result = system(g:fuf_fzf_path." -f ".a:1)
+    let result = substitute(result, '\r','', 'g')
+    let resultlist = split(result,"\n")
+    call fuf#givenfile#launch('',0,'>Fzf>',resultlist)
+endfunction
+command! -nargs=+ FufFzf call FufFzf(<f-args>)
+
+function! FufFd(...)
+    let result = system(g:fuf_fd_path." -t f ".(a:0>0 ? a:1 : ''))
+    let result = substitute(result, '\r','', 'g')
+    let resultlist = split(result,"\n")
+    call fuf#givenfile#launch('',0,'>Fd>',resultlist)
+endfunction
+command! -nargs=* FufFd call FufFd(<f-args>)
 
 function! FufLocate(...)
     if has('win32') || has('win64')
