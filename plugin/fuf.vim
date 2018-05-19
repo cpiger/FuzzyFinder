@@ -175,7 +175,9 @@ if !exists('g:fuf_fd_path')
     let g:fuf_fd_path='fd.exe'
 endif
 
-let g:fuf_coveragefile_external_cmd = 'fd -t f'
+if !exists('g:fuf_coveragefile_external_cmd')
+    let g:fuf_coveragefile_external_cmd = 'fd -t f'
+endif
 
 function! FufAg(...)
     let result = system(g:fuf_ag_path." --nogroup --column --nocolor ".a:1)
