@@ -52,6 +52,39 @@ endfunction
 let s:MODE_NAME = expand('<sfile>:t:r')
 
 "
+let s:precache = []
+let s:precache_coveragefile_flag = 0
+function! s:FDOutput(chan, msg)
+        " echomsg "<FD>:".a:msg
+        call add(s:precache, a:msg)
+endfunction
+
+function! s:FDFinished(job, status)
+    let key = join([getcwd(), g:fuf_ignoreCase, g:fuf_coveragefile_exclude,
+                \         g:fuf_coveragefile_globPatterns], "\n")
+    let s:precache[key] = deepcopy(s:precache)
+    call map(s:precache[key], 'fuf#makePathItem(v:val, "", 0)')
+    if len(g:fuf_coveragefile_exclude)
+        call filter(s:precache[key], 'v:val.word !~ g:fuf_coveragefile_exclude')
+    endif
+    call fuf#mapToSetSerialIndex(s:precache[key], 1)
+    call fuf#mapToSetAbbrWithSnippedWordAsPath(s:precache[key])
+    let s:precache_coveragefile_flag = 1
+
+    silent echohl ModeMsg
+    echomsg "FufCoverageFile Cache Finished"
+    silent echohl None
+endfunction
+
+function! FuFPrepareItems()
+    let s:precache = []
+    let s:precache_coveragefile_flag = 0
+    let s:fdjob = job_start(g:fuf_coveragefile_external_cmd, {
+                \ 'out_cb' : function('s:FDOutput'),
+                \ 'exit_cb': function('s:FDFinished'),
+                \ })
+endfunction
+
 function s:enumItems()
     let key = join([getcwd(), g:fuf_ignoreCase, g:fuf_coveragefile_exclude,
                 \         g:fuf_coveragefile_globPatterns], "\n")
@@ -61,32 +94,36 @@ function s:enumItems()
     " let TimeCost2 = localtime() 
     " let TimeCost3 = localtime() 
     " let TimeCost4 = localtime() 
-    if !exists('s:cache[key]')
-        if g:fuf_coveragefile_external_cmd == ''
-            let s:cache[key] = l9#concat(map(copy(g:fuf_coveragefile_globPatterns), 'fuf#glob(v:val)'))
-            call filter(s:cache[key], 'filereadable(v:val)') " filter out directories
-            call map(s:cache[key], 'fuf#makePathItem(fnamemodify(v:val, ":~:."), "", 0)')
-        else
-            let result = system(g:fuf_coveragefile_external_cmd)
-            let s:cache[key] = split(result,"\n")
+    if s:precache_coveragefile_flag == 1 && exists('s:precache[key]')
+        let s:cache[key] = deepcopy(s:precache[key])
+    else
+        if !exists('s:cache[key]')
+            if g:fuf_coveragefile_external_cmd == ''
+                let s:cache[key] = l9#concat(map(copy(g:fuf_coveragefile_globPatterns), 'fuf#glob(v:val)'))
+                call filter(s:cache[key], 'filereadable(v:val)') " filter out directories
+                call map(s:cache[key], 'fuf#makePathItem(fnamemodify(v:val, ":~:."), "", 0)')
+            else
+                let result = system(g:fuf_coveragefile_external_cmd)
+                let s:cache[key] = split(result,"\n")
 
-            " let endTime = localtime()
-            " let TimeCost1 = endTime - startTime
-            call map(s:cache[key], 'fuf#makePathItem(v:val, "", 0)')
-            " let endTime = localtime()
-            " let TimeCost2 = endTime - startTime
-        endif
+                " let endTime = localtime()
+                " let TimeCost1 = endTime - startTime
+                call map(s:cache[key], 'fuf#makePathItem(v:val, "", 0)')
+                " let endTime = localtime()
+                " let TimeCost2 = endTime - startTime
+            endif
 
-        if len(g:fuf_coveragefile_exclude)
-            call filter(s:cache[key], 'v:val.word !~ g:fuf_coveragefile_exclude')
+            if len(g:fuf_coveragefile_exclude)
+                call filter(s:cache[key], 'v:val.word !~ g:fuf_coveragefile_exclude')
+            endif
+            call fuf#mapToSetSerialIndex(s:cache[key], 1)
+            " let endTime = localtime()
+            " let TimeCost3 = endTime - startTime
+            call fuf#mapToSetAbbrWithSnippedWordAsPath(s:cache[key])
+            " let endTime = localtime()
+            " let TimeCost4 = endTime - startTime
+            " echomsg TimeCost1.":".TimeCost2.":".TimeCost3.":".TimeCost4
         endif
-        call fuf#mapToSetSerialIndex(s:cache[key], 1)
-        " let endTime = localtime()
-        " let TimeCost3 = endTime - startTime
-        call fuf#mapToSetAbbrWithSnippedWordAsPath(s:cache[key])
-        " let endTime = localtime()
-        " let TimeCost4 = endTime - startTime
-        " echomsg TimeCost1.":".TimeCost2.":".TimeCost3.":".TimeCost4
     endif
     return s:cache[key]
 endfunction

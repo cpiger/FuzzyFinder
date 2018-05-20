@@ -217,5 +217,7 @@ function! FufLocate(...)
 endfunction
 command! -nargs=+ FufLocate call FufLocate(<f-args>)
 
+command!  FufPrepare call FuFPrepareItems()
+
 "=============================================================================
 " vim: set fdm=marker:
