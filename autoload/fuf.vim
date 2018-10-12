@@ -736,11 +736,23 @@ endfunction
 "
 " let s:FUF_BUF_NAME = '[fuf]'
 let s:FUF_BUF_NAME = '__FUF__'
-
+function s:GotoMainEditBuffer()
+    if &modifiable
+        return
+    endif
+    let win_count = winnr('$')
+    for i in range(1, win_count)
+        wincmd w
+        if &modifiable
+            return
+        endif
+    endfor
+endfunction
 "
 function s:activateFufBuffer()
   " lcd . : To avoid the strange behavior that unnamed buffer changes its cwd
   "         if 'autochdir' was set on.
+  call s:GotoMainEditBuffer()
   lcd .
   let cwd = getcwd()
   call l9#tempbuffer#openScratch(s:FUF_BUF_NAME, 'fuf', [], 0, 0, 1, {})
