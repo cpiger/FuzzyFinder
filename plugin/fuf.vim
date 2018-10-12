@@ -186,6 +186,7 @@ function! FufAg(...)
     call fuf#givenfile#launch('',0,'>Ag>',resultlist)
 endfunction
 command! -nargs=+ FufAg call FufAg(<f-args>)
+command! -nargs=+ FAg call FufAg(<f-args>)
 
 function! FufFzf(...)
     let result = system(g:fuf_fzf_path." -f ".a:1)
@@ -194,6 +195,7 @@ function! FufFzf(...)
     call fuf#givenfile#launch('',0,'>Fzf>',resultlist)
 endfunction
 command! -nargs=+ FufFzf call FufFzf(<f-args>)
+command! -nargs=+ FFzf call FufFzf(<f-args>)
 
 function! FufFd(...)
     let result = system(g:fuf_fd_path." -t f ".(a:0>0 ? a:1 : ''))
@@ -202,6 +204,7 @@ function! FufFd(...)
     call fuf#givenfile#launch('',0,'>Fd>',resultlist)
 endfunction
 command! -nargs=* FufFd call FufFd(<f-args>)
+command! -nargs=* FFd call FufFd(<f-args>)
 
 function! FufLocate(...)
     if has('win32') || has('win64')
@@ -216,6 +219,7 @@ function! FufLocate(...)
     call fuf#givenfile#launch('',0,'>Everything>',resultlist)
 endfunction
 command! -nargs=+ FufLocate call FufLocate(<f-args>)
+command! -nargs=+ FLocate call FufLocate(<f-args>)
 
 command!  FufPrepare call FuFPrepareItems()
 
