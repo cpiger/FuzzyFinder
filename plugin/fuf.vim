@@ -207,8 +207,13 @@ command! -nargs=* FufFd call FufFd(<f-args>)
 command! -nargs=* FFd call FufFd(<f-args>)
 
 function! FufLocate(...)
+
     if has('win32') || has('win64')
-        let result = system(g:fuf_everything_path." ".a:1)
+        if a:0 == 2
+            let result = system(g:fuf_everything_path." -p ". FindRootDirectory() ." ".a:1)
+        else
+            let result = system(g:fuf_everything_path." -p ". FindRootDirectory())
+        endif
     else
         let result = system(g:fuf_locate_path." -i -b ".a:1)
     endif
@@ -218,8 +223,8 @@ function! FufLocate(...)
     endif
     call fuf#givenfile#launch('',0,'>Everything>',resultlist)
 endfunction
-command! -nargs=+ FufLocate call FufLocate(<f-args>)
-command! -nargs=+ FLocate call FufLocate(<f-args>)
+command! -nargs=* FufLocate call FufLocate(<f-args>)
+command! -nargs=* FLocate call FufLocate(<f-args>)
 
 command!  FufPrepare call FuFPrepareItems()
 

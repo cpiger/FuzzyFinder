@@ -103,8 +103,15 @@ function s:enumItems()
                 call filter(s:cache[key], 'filereadable(v:val)') " filter out directories
                 call map(s:cache[key], 'fuf#makePathItem(fnamemodify(v:val, ":~:."), "", 0)')
             else
-                let result = system(g:fuf_coveragefile_external_cmd)
+                if has('win32') || has('win64')
+                    "with vim-rooter
+                    let result = system(g:fuf_everything_path." -p ". getcwd())
+                    let result = substitute(result, substitute(getcwd().'\', '\\','\\\\', 'g'), '', 'g')
+                    let s:cache[key] = split(result,"\n")
+                else
+                    let result = system(g:fuf_coveragefile_external_cmd)
                 let s:cache[key] = split(result,"\n")
+                endif
 
                 " let endTime = localtime()
                 " let TimeCost1 = endTime - startTime
