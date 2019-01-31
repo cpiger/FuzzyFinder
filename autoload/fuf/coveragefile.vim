@@ -108,6 +108,7 @@ function s:enumItems()
                     let result = system(g:fuf_everything_path." -p ". getcwd())
                     let result = substitute(result, substitute(getcwd().'\', '\\','\\\\', 'g'), '', 'g')
                     let s:cache[key] = split(result,"\n")
+                    call filter(s:cache[key], 'filereadable(v:val)') " filter out directories
                 else
                     let result = system(g:fuf_coveragefile_external_cmd)
                 let s:cache[key] = split(result,"\n")
