@@ -167,10 +167,6 @@ if !exists('g:fuf_ag_path')
     let g:fuf_ag_path='ag.exe'
 endif
 
-if !exists('g:fuf_fzf_path')
-    let g:fuf_fzf_path='fzf.exe'
-endif
-
 if !exists('g:fuf_fd_path')
     let g:fuf_fd_path='fd.exe'
 endif
@@ -188,45 +184,15 @@ endfunction
 command! -nargs=+ FufAg call FufAg(<f-args>)
 command! -nargs=+ FAg call FufAg(<f-args>)
 
-function! FufFzf(...)
-    let result = system(g:fuf_fzf_path." -f ".a:1)
-    let result = substitute(result, '\r','', 'g')
-    let resultlist = split(result,"\n")
-    call fuf#givenfile#launch('',0,'>Fzf>',resultlist)
-endfunction
-command! -nargs=+ FufFzf call FufFzf(<f-args>)
-command! -nargs=+ FFzf call FufFzf(<f-args>)
-
 function! FufFd(...)
     let result = system(g:fuf_fd_path." -t f ".(a:0>0 ? a:1 : ''))
     let result = substitute(result, '\r','', 'g')
     let resultlist = split(result,"\n")
     call fuf#givenfile#launch('',0,'>Fd>',resultlist)
 endfunction
-command! -nargs=* FufFd call FufFd(<f-args>)
-command! -nargs=* FFd call FufFd(<f-args>)
-
-function! FufLocate(...)
-
-    if has('win32') || has('win64')
-        if a:0 == 2
-            let result = system(g:fuf_everything_path." -p ". FindRootDirectory() ." ".a:1)
-        else
-            let result = system(g:fuf_everything_path." -p ". FindRootDirectory())
-        endif
-    else
-        let result = system(g:fuf_locate_path." -i -b ".a:1)
-    endif
-    let resultlist = split(result,"\n")
-    if a:0 == 2
-        call filter(resultlist, 'v:val =~ "^'.a:2.'"')
-    endif
-    call fuf#givenfile#launch('',0,'>Everything>',resultlist)
-endfunction
-command! -nargs=* FufLocate call FufLocate(<f-args>)
-command! -nargs=* FLocate call FufLocate(<f-args>)
-
-command!  FufPrepare call FuFPrepareItems()
+command! -nargs=* FufLocate call FufFd(<f-args>)
+command! -nargs=* FLocate call FufFd(<f-args>)
+command! -nargs=* FDFile call FufFd(<f-args>)
 
 "=============================================================================
 " vim: set fdm=marker:
