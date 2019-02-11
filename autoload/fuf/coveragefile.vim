@@ -29,7 +29,11 @@ endfunction
 
 "
 function fuf#coveragefile#renewCache()
-  let s:cache = {}
+    let s:cache = {}
+    let s:key_cwd = ''
+    let s:cur_cwd = ''
+    let s:cur_rcwd = ''
+    let s:filter_rcwd = ''
 endfunction
 
 "
@@ -51,15 +55,38 @@ endfunction
 
 let s:MODE_NAME = expand('<sfile>:t:r')
 
+" change directory with right command
+function! s:chdir(path)
+	if has('nvim')
+		let cmd = haslocaldir()? 'lcd' : (haslocaldir(-1, 0)? 'tcd' : 'cd')
+	else
+		let cmd = haslocaldir()? 'lcd' : 'cd'
+	endif
+    let cmd = 'cd'
+	silent execute cmd . ' '. fnameescape(a:path)
+endfunc
+
+let s:key_cwd = ''
+let s:cur_cwd = ''
+let s:cur_rcwd = ''
+let s:filter_rcwd = ''
 function s:enumItems()
-    let key = join([getcwd(), g:fuf_ignoreCase, g:fuf_coveragefile_exclude,
+    if s:key_cwd != ''
+        let s:cur_cwd = getcwd()
+        if stridx(s:cur_cwd, s:key_cwd) == 0 "subdir
+            let s:cur_rcwd = strpart(s:cur_cwd, strlen(s:key_cwd)+1, strlen(s:cur_cwd) - strlen(s:key_cwd))
+        else
+            let s:key_cwd = s:cur_cwd
+            let s:cur_rcwd = ''
+        endif
+    else
+        let s:key_cwd = getcwd()
+    endif
+
+    " let s:key_cwd = getcwd()
+
+    let key = join([s:key_cwd, g:fuf_ignoreCase, g:fuf_coveragefile_exclude,
                 \         g:fuf_coveragefile_globPatterns], "\n")
-    " let startTime = localtime()
-    " let endTime = localtime()
-    " let TimeCost1 = localtime() 
-    " let TimeCost2 = localtime() 
-    " let TimeCost3 = localtime() 
-    " let TimeCost4 = localtime() 
 
     if !exists('s:cache[key]')
         if g:fuf_coveragefile_external_cmd == ''
@@ -71,23 +98,14 @@ function s:enumItems()
             let result = system(g:fuf_coveragefile_external_cmd)
             let s:cache[key] = split(result,"\n")
 
-            " let endTime = localtime()
-            " let TimeCost1 = endTime - startTime
             call map(s:cache[key], 'fuf#makePathItem(v:val, "", 0)')
-            " let endTime = localtime()
-            " let TimeCost2 = endTime - startTime
         endif
 
         if len(g:fuf_coveragefile_exclude)
             call filter(s:cache[key], 'v:val.word !~ g:fuf_coveragefile_exclude')
         endif
         call fuf#mapToSetSerialIndex(s:cache[key], 1)
-        " let endTime = localtime()
-        " let TimeCost3 = endTime - startTime
         call fuf#mapToSetAbbrWithSnippedWordAsPath(s:cache[key])
-        " let endTime = localtime()
-        " let TimeCost4 = endTime - startTime
-        " echomsg TimeCost1.":".TimeCost2.":".TimeCost3.":".TimeCost4
     endif
     return s:cache[key]
 endfunction
@@ -198,7 +216,13 @@ endfunction
 
 "
 function s:handler.onOpen(word, mode)
-  call fuf#openFile(a:word, -1, a:mode, g:fuf_reuseWindow)
+    if s:cur_rcwd != ''
+        let filename = strpart(a:word, strlen(s:filter_rcwd))
+        " call ex#warning('filename '. filename ) 
+    else
+        let filename = a:word
+    endif 
+  call fuf#openFile(filename, -1, a:mode, g:fuf_reuseWindow)
 endfunction
 
 "
@@ -211,6 +235,10 @@ function s:handler.onModeEnterPost()
   let bufNamePrev = fnamemodify(bufname(self.bufNrPrev), ':~:.')
   let self.items = copy(s:enumItems())
   call filter(self.items, 'v:val.word !=# bufNamePrev')
+  if s:cur_rcwd != ''
+      let s:filter_rcwd = '^'.s:cur_rcwd
+      call filter(self.items, 'v:val.word =~# s:filter_rcwd')
+  endif
 endfunction
 
 "
