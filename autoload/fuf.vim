@@ -359,6 +359,8 @@ function fuf#defineLaunchCommand(CmdName, modeName, prefixInitialPattern, tempVa
           \             string(s:TEMP_VARIABLES_GROUP), string(a:tempVars))
   endif
   execute printf('command! -range -bang -narg=? %s %s call fuf#launch(%s, %s . <q-args>, len(<q-bang>))',
+        \        a:CmdName, preCmd, string(a:modeName), a:prefixInitialPattern)
+  execute printf('command! -range -bang -narg=? %s %s call fuf#launch(%s, %s . <q-args>, len(<q-bang>))',
         \        RealCmdName, preCmd, string(a:modeName), a:prefixInitialPattern)
 endfunction
 
@@ -411,9 +413,9 @@ function fuf#launch(modeName, initialPattern, partialMatching)
   call s:activateFufBuffer()
   augroup FufLocal
     autocmd!
-    " autocmd CursorMovedI <buffer>        call s:runningHandler.onCursorMovedI() "cause __FUF__ buffer insert a completeion item sometimes
-    " autocmd InsertCharPre <buffer>        call s:runningHandler.onCursorMovedI()  "better than CursorMovedI
-    autocmd CursorHoldI <buffer>        call s:runningHandler.onCursorHoldI()  "better than directly autocmd InsertCharPre
+    autocmd CursorMovedI <buffer>        call s:runningHandler.onCursorMovedI()
+    " autocmd InsertCharPre <buffer>        call s:runningHandler.onInsertCharPre()  "cause ^P
+    " autocmd CursorHoldI <buffer>        call s:runningHandler.onCursorHoldI()  "no comlete when inputting
     autocmd InsertLeave  <buffer> nested call s:runningHandler.onInsertLeave()
   augroup END
   for [key, func] in [
@@ -894,19 +896,27 @@ function s:handlerBase.restorePrompt(line)
   while i < len(self.getPrompt()) && i < len(a:line) && self.getPrompt()[i] ==# a:line[i]
     let i += 1
   endwhile
+  " echomsg "AAA".self.getPrompt() . a:line[i : ]
   return self.getPrompt() . a:line[i : ]
 endfunction
 
-"
-function s:handlerBase.onCursorMovedI()
+function s:handlerBase.onInsertCharPre()
     try
+        " echomsg getline('.')
         if !self.existsPrompt(getline('.'))
+            echomsg getline('.')
+            echomsg "P1111"
             call setline('.', self.restorePrompt(getline('.')))
+            echomsg getline('.')
+            " call feedkeys("\<C-u>", 'n')
             call feedkeys("\<End>", 'n')
         elseif col('.') <= len(self.getPrompt())
+            echomsg "P2222"
             " if the cursor is moved before command prompt
+            call feedkeys("\<C-u>", 'n')
             call feedkeys(repeat("\<Right>", len(self.getPrompt()) - col('.') + 1), 'n')
         elseif col('.') > strlen(getline('.')) && col('.') != self.lastCol
+            echomsg "P3333"
             " if the cursor is placed on the end of the line and has been actually moved.
             let self.lastCol = col('.')
             let self.lastPattern = self.removePrompt(getline('.'))
@@ -918,9 +928,20 @@ function s:handlerBase.onCursorMovedI()
     endtry
 endfunction
 
-function s:handlerBase.onCursorHoldI()
-        call s:runningHandler.onCursorMovedI()
-        autocmd InsertCharPre <buffer>        call s:runningHandler.onCursorMovedI()  "better than CursorMovedI
+"
+function s:handlerBase.onCursorMovedI()
+    if !self.existsPrompt(getline('.'))
+        call setline('.', self.restorePrompt(getline('.')))
+        call feedkeys("\<End>", 'n')
+    elseif col('.') <= len(self.getPrompt())
+        " if the cursor is moved before command prompt
+        call feedkeys(repeat("\<Right>", len(self.getPrompt()) - col('.') + 1), 'n')
+    elseif col('.') > strlen(getline('.')) && col('.') != self.lastCol
+        " if the cursor is placed on the end of the line and has been actually moved.
+        let self.lastCol = col('.')
+        let self.lastPattern = self.removePrompt(getline('.'))
+        call feedkeys("\<C-x>\<C-o>", 'n')
+    endif
 endfunction
 
 "
