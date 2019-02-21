@@ -351,6 +351,7 @@ endfunction
 
 "
 function fuf#defineLaunchCommand(CmdName, modeName, prefixInitialPattern, tempVars)
+    let RealCmdName = g:fuf_cmd_prefix . strpart(a:CmdName, 3)
   if empty(a:tempVars)
     let preCmd = ''
   else
@@ -358,7 +359,7 @@ function fuf#defineLaunchCommand(CmdName, modeName, prefixInitialPattern, tempVa
           \             string(s:TEMP_VARIABLES_GROUP), string(a:tempVars))
   endif
   execute printf('command! -range -bang -narg=? %s %s call fuf#launch(%s, %s . <q-args>, len(<q-bang>))',
-        \        a:CmdName, preCmd, string(a:modeName), a:prefixInitialPattern)
+        \        RealCmdName, preCmd, string(a:modeName), a:prefixInitialPattern)
 endfunction
 
 "
@@ -898,23 +899,28 @@ endfunction
 
 "
 function s:handlerBase.onCursorMovedI()
-  if !self.existsPrompt(getline('.'))
-    call setline('.', self.restorePrompt(getline('.')))
-    call feedkeys("\<End>", 'n')
-  elseif col('.') <= len(self.getPrompt())
-    " if the cursor is moved before command prompt
-    call feedkeys(repeat("\<Right>", len(self.getPrompt()) - col('.') + 1), 'n')
-  elseif col('.') > strlen(getline('.')) && col('.') != self.lastCol
-    " if the cursor is placed on the end of the line and has been actually moved.
-    let self.lastCol = col('.')
-    let self.lastPattern = self.removePrompt(getline('.'))
-    call feedkeys("\<C-x>\<C-o>", 'n')
-  endif
+    try
+        if !self.existsPrompt(getline('.'))
+            call setline('.', self.restorePrompt(getline('.')))
+            call feedkeys("\<End>", 'n')
+        elseif col('.') <= len(self.getPrompt())
+            " if the cursor is moved before command prompt
+            call feedkeys(repeat("\<Right>", len(self.getPrompt()) - col('.') + 1), 'n')
+        elseif col('.') > strlen(getline('.')) && col('.') != self.lastCol
+            " if the cursor is placed on the end of the line and has been actually moved.
+            let self.lastCol = col('.')
+            let self.lastPattern = self.removePrompt(getline('.'))
+            call feedkeys("\<C-x>\<C-o>", 'n')
+        endif
+    catch /E523/
+        " echomsg "E523=========="
+        call feedkeys("\<C-x>\<C-o>", 'n')
+    endtry
 endfunction
 
 function s:handlerBase.onCursorHoldI()
-    call s:runningHandler.onCursorMovedI()
-    autocmd InsertCharPre <buffer>        call s:runningHandler.onCursorMovedI()  "better than CursorMovedI
+        call s:runningHandler.onCursorMovedI()
+        autocmd InsertCharPre <buffer>        call s:runningHandler.onCursorMovedI()  "better than CursorMovedI
 endfunction
 
 "
