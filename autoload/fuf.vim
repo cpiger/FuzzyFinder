@@ -163,6 +163,54 @@ function fuf#openBuffer(bufNr, mode, reuse)
         \ }[a:mode], a:bufNr)
 endfunction
 
+function fuf#isTextFiletype(path)
+    " let fname = a:path
+    " let path = fnameescape(fnamemodify(fname, ':~:.'))
+
+    " let filetype_str = system('file ' .path)
+    " echomsg filetype_str
+
+    " if filetype_str =~# '.*text,'
+    " return 1
+    " else 
+    " return 0
+
+    let fname = a:path
+    let suffix =fnamemodify(fname, ':e')
+    if (index(g:fuf_file_exec_include, suffix) >= 0)
+        return 1
+    else 
+        return 0
+endfunction
+
+function fuf#fileExecute(path)
+  let l:oldssl=&shellslash
+  set noshellslash
+
+  let fname = a:path
+  let path = fnameescape(fnamemodify(fname, ':~:.'))
+
+  if has("gui_running")
+    let args = shellescape(path,1)." &"
+  else
+    let args = shellescape(path,1)." > /dev/null"
+  end
+
+  if has("unix") && executable("gnome-open") && !s:haskdeinit
+    exe "silent !gnome-open ".args
+    let ret= v:shell_error
+  elseif has("unix") && executable("kde-open") && s:haskdeinit
+    exe "silent !kde-open ".args
+    let ret= v:shell_error
+  elseif has("unix") && executable("open") && s:hasdarwin
+    exe "silent !open ".args
+    let ret= v:shell_error
+  elseif has("win32") || has("win64")
+    exe "silent !start explorer ".shellescape(path,1)
+  end
+  let &shellslash=l:oldssl
+  redraw!
+endfunction
 "
 function fuf#openFile(path, lnum, mode, reuse)
     " u-ctags ms-windows filename path \\ in tags
@@ -175,20 +223,24 @@ function fuf#openFile(path, lnum, mode, reuse)
   if bufNr > -1
     call fuf#openBuffer(bufNr, a:mode, a:reuse)
   else
-      if -1 == a:lnum
-          execute {
-                      \   s:OPEN_TYPE_CURRENT : 'edit '   ,
-                      \   s:OPEN_TYPE_SPLIT   : 'split '  ,
-                      \   s:OPEN_TYPE_VSPLIT  : 'vsplit ' ,
-                      \   s:OPEN_TYPE_TAB     : 'tabedit ',
-                      \ }[a:mode] . fnameescape(fnamemodify(fname, ':~:.'))
+      if fuf#isTextFiletype(fname)
+          call fuf#fileExecute(fname)
       else
-          execute {
-                      \   s:OPEN_TYPE_CURRENT : 'edit '   ,
-                      \   s:OPEN_TYPE_SPLIT   : 'split '  ,
-                      \   s:OPEN_TYPE_VSPLIT  : 'vsplit ' ,
-                      \   s:OPEN_TYPE_TAB     : 'tabedit ',
-                      \ }[a:mode] ."+".a:lnum." ". fnameescape(fnamemodify(fname, ':~:.'))
+          if -1 == a:lnum
+              execute {
+                          \   s:OPEN_TYPE_CURRENT : 'edit '   ,
+                          \   s:OPEN_TYPE_SPLIT   : 'split '  ,
+                          \   s:OPEN_TYPE_VSPLIT  : 'vsplit ' ,
+                          \   s:OPEN_TYPE_TAB     : 'tabedit ',
+                          \ }[a:mode] . fnameescape(fnamemodify(fname, ':~:.'))
+          else
+              execute {
+                          \   s:OPEN_TYPE_CURRENT : 'edit '   ,
+                          \   s:OPEN_TYPE_SPLIT   : 'split '  ,
+                          \   s:OPEN_TYPE_VSPLIT  : 'vsplit ' ,
+                          \   s:OPEN_TYPE_TAB     : 'tabedit ',
+                          \ }[a:mode] ."+".a:lnum." ". fnameescape(fnamemodify(fname, ':~:.'))
+          endif
       endif
   endif
 endfunction
@@ -414,6 +466,7 @@ function fuf#launch(modeName, initialPattern, partialMatching)
   augroup FufLocal
     autocmd!
     autocmd CursorMovedI <buffer>        call s:runningHandler.onCursorMovedI()
+    " autocmd CursorMoved <buffer>        call s:runningHandler.onCursorHoldI()  "no comlete when inputting
     " autocmd InsertCharPre <buffer>        call s:runningHandler.onInsertCharPre()  "cause ^P
     " autocmd CursorHoldI <buffer>        call s:runningHandler.onCursorHoldI()  "no comlete when inputting
     autocmd InsertLeave  <buffer> nested call s:runningHandler.onInsertLeave()
@@ -423,7 +476,10 @@ function fuf#launch(modeName, initialPattern, partialMatching)
         \   [ g:fuf_keyOpenSplit     , 'onCr(' . s:OPEN_TYPE_SPLIT   . ')' ],
         \   [ g:fuf_keyOpenVsplit    , 'onCr(' . s:OPEN_TYPE_VSPLIT  . ')' ],
         \   [ g:fuf_keyOpenTabpage   , 'onCr(' . s:OPEN_TYPE_TAB     . ')' ],
+        \   [ '<Tab>'                , 'onTab()'                           ],
+        \   [ '<S-Tab>'              , 'onSTab()'                          ],
         \   [ '<BS>'                 , 'onBs()'                            ],
+        \   [ '<C-u>'                , 'onCu()'                            ],
         \   [ '<C-h>'                , 'onBs()'                            ],
         \   [ '<C-w>'                , 'onDeleteWord()'                    ],
         \   [ g:fuf_keyPreview       , 'onPreviewBase(1)'                  ],
@@ -896,37 +952,9 @@ function s:handlerBase.restorePrompt(line)
   while i < len(self.getPrompt()) && i < len(a:line) && self.getPrompt()[i] ==# a:line[i]
     let i += 1
   endwhile
-  " echomsg "AAA".self.getPrompt() . a:line[i : ]
   return self.getPrompt() . a:line[i : ]
 endfunction
 
-function s:handlerBase.onInsertCharPre()
-    try
-        " echomsg getline('.')
-        if !self.existsPrompt(getline('.'))
-            echomsg getline('.')
-            echomsg "P1111"
-            call setline('.', self.restorePrompt(getline('.')))
-            echomsg getline('.')
-            " call feedkeys("\<C-u>", 'n')
-            call feedkeys("\<End>", 'n')
-        elseif col('.') <= len(self.getPrompt())
-            echomsg "P2222"
-            " if the cursor is moved before command prompt
-            call feedkeys("\<C-u>", 'n')
-            call feedkeys(repeat("\<Right>", len(self.getPrompt()) - col('.') + 1), 'n')
-        elseif col('.') > strlen(getline('.')) && col('.') != self.lastCol
-            echomsg "P3333"
-            " if the cursor is placed on the end of the line and has been actually moved.
-            let self.lastCol = col('.')
-            let self.lastPattern = self.removePrompt(getline('.'))
-            call feedkeys("\<C-x>\<C-o>", 'n')
-        endif
-    catch /E523/
-        " echomsg "E523=========="
-        call feedkeys("\<C-x>\<C-o>", 'n')
-    endtry
-endfunction
 
 "
 function s:handlerBase.onCursorMovedI()
@@ -936,10 +964,11 @@ function s:handlerBase.onCursorMovedI()
     elseif col('.') <= len(self.getPrompt())
         " if the cursor is moved before command prompt
         call feedkeys(repeat("\<Right>", len(self.getPrompt()) - col('.') + 1), 'n')
-    elseif col('.') > strlen(getline('.')) && col('.') != self.lastCol
+    elseif (col('.') > strlen(getline('.')) && col('.') != self.lastCol) || getline('.') == self.getPrompt()
         " if the cursor is placed on the end of the line and has been actually moved.
         let self.lastCol = col('.')
         let self.lastPattern = self.removePrompt(getline('.'))
+        let s:lastPattern = self.lastPattern
         call feedkeys("\<C-x>\<C-o>", 'n')
     endif
 endfunction
@@ -986,6 +1015,21 @@ endfunction
 "
 function s:handlerBase.onBs()
   call feedkeys((pumvisible() ? "\<C-e>\<BS>" : "\<BS>"), 'n')
+endfunction
+
+function s:handlerBase.onCu()
+    call feedkeys("\<C-u>", 'n')
+    call feedkeys("\<C-x>\<C-o>", 'n')
+endfunction
+
+let s:g_tab = 0
+let s:lastline = ""
+function s:handlerBase.onTab()
+    call feedkeys((pumvisible() ? "\<Down>" : "\<Tab>"), 'n')
+endfunction
+
+function s:handlerBase.onSTab()
+  call feedkeys((pumvisible() ? "\<Up>" : "\<S-Tab>"), 'n')
 endfunction
 
 "
