@@ -104,6 +104,12 @@ function s:enumItems()
         if len(g:fuf_coveragefile_exclude)
             call filter(s:cache[key], 'v:val.word !~ g:fuf_coveragefile_exclude')
         endif
+
+        " fd -E, --exclude <pattern>...     Exclude entries that match the given glob pattern
+        " if len(g:fuf_coveragefile_dir_exclude)
+            " call filter(s:cache[key], 'v:val.word !~ g:fuf_coveragefile_dir_exclude')
+        " endif
+
         call fuf#mapToSetSerialIndex(s:cache[key], 1)
         call fuf#mapToSetAbbrWithSnippedWordAsPath(s:cache[key])
     endif
