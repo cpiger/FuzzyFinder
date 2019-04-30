@@ -174,6 +174,10 @@ if !exists('g:fuf_fd_path')
     let g:fuf_fd_path='fd.exe'
 endif
 
+if !exists('g:fuf_debug_info')
+    let g:fuf_debug_info = 0
+endif
+
 if !exists('g:fuf_coveragefile_external_cmd')
     let g:fuf_coveragefile_external_cmd = 'fd -t f'
 endif
@@ -181,7 +185,7 @@ endif
 " function! FufAg(...)
 function! FufAg(pattern)
     let cmd = g:fuf_ag_path." --nogroup --column --nocolor " .a:pattern
-    let result = system(cmd)
+    let result = vimproc#system(cmd)
     let result = substitute(result, '\r','', 'g')
     let resultlist = split(result,"\n")
     call fuf#givenfile#launch('',0,'>Ag>',resultlist)
@@ -190,7 +194,7 @@ command! -nargs=+ FAg call FufAg('<args>')
 command! -nargs=+ FufAg call FufAg('<args>')
 
 function! FufFd(...)
-    let result = system(g:fuf_fd_path." -t f ".(a:0>0 ? a:1 : ''))
+    let result = vimproc#system(g:fuf_fd_path." -t f ".(a:0>0 ? a:1 : ''))
     let result = substitute(result, '\r','', 'g')
     let resultlist = split(result,"\n")
     call fuf#givenfile#launch('',0,'>Fd>',resultlist)

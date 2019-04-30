@@ -34,6 +34,7 @@ function fuf#coveragefile#renewCache()
     let s:cur_cwd = ''
     let s:cur_rcwd = ''
     let s:filter_rcwd = ''
+    let s:branch = ''
 endfunction
 
 "
@@ -70,7 +71,10 @@ let s:key_cwd = ''
 let s:cur_cwd = ''
 let s:cur_rcwd = ''
 let s:filter_rcwd = ''
+let s:branch = ''
+
 function s:enumItems()
+
     if s:key_cwd != ''
         let s:cur_cwd = getcwd()
         if stridx(s:cur_cwd, s:key_cwd) == 0 "subdir
@@ -83,35 +87,46 @@ function s:enumItems()
         let s:key_cwd = getcwd()
     endif
 
+    let s:key_cwd = '('.s:branch.')'.s:key_cwd
+    " echomsg s:key_cwd
+
     " let s:key_cwd = getcwd()
 
     let key = join([s:key_cwd, g:fuf_ignoreCase, g:fuf_coveragefile_exclude,
                 \         g:fuf_coveragefile_globPatterns], "\n")
 
     if !exists('s:cache[key]')
-        if g:fuf_coveragefile_external_cmd == ''
-            let s:cache[key] = l9#concat(map(copy(g:fuf_coveragefile_globPatterns), 'fuf#glob(v:val)'))
-            call filter(s:cache[key], 'filereadable(v:val)') " filter out directories
-            call map(s:cache[key], 'fuf#makePathItem(fnamemodify(v:val, ":~:."), "", 0)')
+        let cacheName = 'cache-' . l9#hash224(key)
+        let FullcacheName = l9#concatPaths([g:fuf_dataDir, s:MODE_NAME, cacheName])
+        if glob(FullcacheName) != ''
+            " echomsg "SpecificFile exists"
+            let s:cache[key] = fuf#loadDataFile(s:MODE_NAME, cacheName)
         else
-            "with vim-rooter
-            let result = system(g:fuf_coveragefile_external_cmd)
-            let s:cache[key] = split(result,"\n")
+            if g:fuf_coveragefile_external_cmd == ''
+                let s:cache[key] = l9#concat(map(copy(g:fuf_coveragefile_globPatterns), 'fuf#glob(v:val)'))
+                call filter(s:cache[key], 'filereadable(v:val)') " filter out directories
+                call map(s:cache[key], 'fuf#makePathItem(fnamemodify(v:val, ":~:."), "", 0)')
+            else
+                "with vim-rooter
+                let result = vimproc#system(g:fuf_coveragefile_external_cmd)
+                let s:cache[key] = split(result,"\n")
 
-            call map(s:cache[key], 'fuf#makePathItem(v:val, "", 0)')
-        endif
+                call map(s:cache[key], 'fuf#makePathItem(v:val, "", 0)')
+            endif
 
-        if len(g:fuf_coveragefile_exclude)
-            call filter(s:cache[key], 'v:val.word !~ g:fuf_coveragefile_exclude')
-        endif
+            if len(g:fuf_coveragefile_exclude)
+                call filter(s:cache[key], 'v:val.word !~ g:fuf_coveragefile_exclude')
+            endif
 
-        " fd -E, --exclude <pattern>...     Exclude entries that match the given glob pattern
-        " if len(g:fuf_coveragefile_dir_exclude)
+            " fd -E, --exclude <pattern>...     Exclude entries that match the given glob pattern
+            " if len(g:fuf_coveragefile_dir_exclude)
             " call filter(s:cache[key], 'v:val.word !~ g:fuf_coveragefile_dir_exclude')
-        " endif
+            " endif
 
-        call fuf#mapToSetSerialIndex(s:cache[key], 1)
-        call fuf#mapToSetAbbrWithSnippedWordAsPath(s:cache[key])
+            call fuf#mapToSetSerialIndex(s:cache[key], 1)
+            call fuf#mapToSetAbbrWithSnippedWordAsPath(s:cache[key])
+        endif
+        call fuf#saveDataFile(s:MODE_NAME, cacheName, s:cache[key])
     endif
     return s:cache[key]
 endfunction
@@ -233,6 +248,10 @@ endfunction
 
 "
 function s:handler.onModeEnterPre()
+    "call FugitiveHead before enter __FUF__ buffer, or else get Empty
+    if fuf#has_fugitive()
+        let s:branch = FugitiveHead()
+    endif
 endfunction
 
 "

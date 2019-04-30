@@ -159,7 +159,7 @@ function s:getTagItems(bufNr)
     return []
   elseif !exists('s:tagItemsCache[cmd]') ||
         \ s:tagItemsCache[cmd].time < getftime(expand(bufname(a:bufNr)))
-    let items = split(system(cmd), "\n")
+    let items = split(vimproc#system(cmd), "\n")
     if v:shell_error
       call fuf#echoError([cmd] + items)
       throw "Command error"

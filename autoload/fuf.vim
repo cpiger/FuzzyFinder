@@ -514,6 +514,9 @@ function fuf#saveDataFile(modeName, dataName, items)
     return -1
   endif
   let lines = map(copy(a:items), 'string(v:val)')
+  if g:fuf_debug_info == 1
+      echomsg "Fuf save cache: " . glob(l9#concatPaths([g:fuf_dataDir, a:modeName, a:dataName]))
+  endif
   return l9#writeFile(lines, l9#concatPaths([g:fuf_dataDir, a:modeName, a:dataName]))
 endfunction
 
@@ -1161,6 +1164,10 @@ function s:checkDataFileCompatibility()
 endfunction
 
 call s:checkDataFileCompatibility()
+
+function! fuf#has_fugitive()
+  return exists('*fugitive#head') || exists('*FugitiveHead')
+endfunction "}}}
 
 " }}}1
 "=============================================================================
